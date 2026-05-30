@@ -11,6 +11,7 @@ function ScanPage() {
   const [status, setStatus] = useState("");
   const [loading, setLoading] = useState(false);
 
+  // GEOLOCATION
   const getLocation = () => {
     return new Promise((resolve, reject) => {
       navigator.geolocation.getCurrentPosition(
@@ -49,6 +50,8 @@ function ScanPage() {
 
       const location = await getLocation();
 
+      console.log("Location:", location);
+
       setStatus("Verifying session...");
 
       const res = await API.post(
@@ -57,15 +60,21 @@ function ScanPage() {
           rollNumber: formData.rollNumber,
           department: formData.department,
           year: formData.year,
+
           latitude: location.latitude,
           longitude: location.longitude,
         }
       );
 
-      console.log(res)
+      console.log(
+        "Attendance Response:",
+        res.data
+      );
 
-      console.log(formData)
-
+      console.log(
+        "Form Data:",
+        formData
+      );
 
       setStatus(res.data.message);
 
@@ -76,12 +85,25 @@ function ScanPage() {
       });
 
     } catch (error) {
-      console.error(error);
 
-      setStatus(
-        error.response?.data?.message ||
-        "Attendance failed"
+      console.error(
+        "Attendance Error:",
+        error
       );
+
+      if (
+        error.code === 1
+      ) {
+        setStatus(
+          "Location permission denied"
+        );
+      } else {
+        setStatus(
+          error.response?.data?.message ||
+          "Attendance failed"
+        );
+      }
+
     } finally {
       setLoading(false);
     }
@@ -89,11 +111,16 @@ function ScanPage() {
 
   return (
     <div className="min-h-screen bg-gray-100 flex justify-center items-center p-5">
+
       <div className="bg-white p-8 rounded-xl shadow-lg w-full max-w-md">
 
-        <h1 className="text-3xl font-bold text-center mb-6">
+        <h1 className="text-3xl font-bold text-center mb-2">
           Smart Attendance
         </h1>
+
+        <p className="text-center text-gray-500 mb-6">
+          Mark Your Attendance
+        </p>
 
         <input
           type="text"
@@ -102,6 +129,7 @@ function ScanPage() {
           value={formData.rollNumber}
           onChange={handleChange}
           className="w-full border p-3 rounded mb-4"
+          required
         />
 
         <input
@@ -111,6 +139,7 @@ function ScanPage() {
           value={formData.department}
           onChange={handleChange}
           className="w-full border p-3 rounded mb-4"
+          required
         />
 
         <input
@@ -120,12 +149,17 @@ function ScanPage() {
           value={formData.year}
           onChange={handleChange}
           className="w-full border p-3 rounded mb-4"
+          required
         />
 
         <button
           onClick={handleAttendance}
           disabled={loading}
-          className="w-full bg-blue-600 text-white p-3 rounded-lg"
+          className={`w-full p-3 rounded-lg text-white ${
+            loading
+              ? "bg-gray-400 cursor-not-allowed"
+              : "bg-blue-600 hover:bg-blue-700"
+          }`}
         >
           {loading
             ? "Processing..."
@@ -133,12 +167,13 @@ function ScanPage() {
         </button>
 
         {status && (
-          <div className="mt-5 p-3 bg-gray-100 rounded text-center">
+          <div className="mt-5 p-3 rounded bg-gray-100 text-center">
             {status}
           </div>
         )}
 
       </div>
+
     </div>
   );
 }
