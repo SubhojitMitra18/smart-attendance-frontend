@@ -62,6 +62,11 @@ function ScanPage() {
         }
       );
 
+      console.log(res)
+
+      console.log(formData)
+
+
       setStatus(res.data.message);
 
       setFormData({
