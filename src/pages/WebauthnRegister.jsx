@@ -10,55 +10,56 @@ function StudentWebAuthnRegister() {
   const [rollNumber, setRollNumber] = useState("");
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState("");
+const handleRegister = async () => {
+  try {
+    setLoading(true);
+    setStatus("Starting registration...");
 
-  const handleRegister = async () => {
-    try {
-      setLoading(true);
-      setStatus("Starting registration...");
+    // STEP 1: Get options
+    const optionsRes = await API.post(
+      "/webauthn/register/options",
+      { rollNumber }
+    );
 
-      // STEP 1: Get options from backend
-      const optionsRes = await API.post(
-        "/webauthn/register/options",
-        { rollNumber }
-      );
+    const options = optionsRes.data;
 
-      const options = optionsRes.data;
+    setStatus("Touch fingerprint / Face ID...");
 
-      setStatus("Touch fingerprint / Face ID...");
+    // STEP 2: Fingerprint / Face ID
+    const credential = await startRegistration({
+      optionsJSON: options,
+    });
 
-      // STEP 2: Trigger fingerprint / Face ID
-      const credential = await startRegistration({
-        optionsJSON: options,
-      });
+    setStatus("Verifying with server...");
 
-      setStatus("Verifying with server...");
+    console.log("Credential from device:", credential);
 
-      // STEP 3: Send response to backend
-      const verifyRes = await API.post(
-        "/webauthn/register/verify",
-        {
-          rollNumber,
-          credential,
-        }
-      );
+    // STEP 3: Verify (IMPORTANT: send clean JSON)
+    const verifyRes = await API.post(
+      "/webauthn/register/verify",
+      {
+        rollNumber,
+        credential: JSON.parse(JSON.stringify(credential)),
+      }
+    );
 
-      console.log(verfyRes)
+    console.log("VERIFY RESPONSE:", verifyRes.data);
 
-      setStatus(verifyRes.data.message);
+    setStatus(verifyRes.data.message);
 
-    } catch (err) {
-      console.log(err);
+  } catch (err) {
+    console.log("REG ERROR:", err);
 
-      setStatus(
-        err.response?.data?.message ||
-        "Registration failed"
-      );
+    setStatus(
+      err?.response?.data?.message ||
+      err.message ||
+      "Registration failed"
+    );
 
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  } finally {
+    setLoading(false);
+  }
+};
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100">
 
