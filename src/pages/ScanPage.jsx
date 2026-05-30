@@ -46,7 +46,7 @@ function ScanPage() {
       });
 
 
-      console.log(credential)
+      console.log("Credentials: ",credential)
 
       setStatus("Verifying identity...");
 
@@ -61,7 +61,7 @@ function ScanPage() {
         }
       );
 
-      console.log(verifyRes)
+      console.log("Response: ",verifyRes)
 
       const student = verifyRes.data;
 
