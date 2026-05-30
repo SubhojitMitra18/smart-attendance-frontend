@@ -45,6 +45,9 @@ function ScanPage() {
         optionsJSON: optionsRes.data,
       });
 
+
+      console.log(credential)
+
       setStatus("Verifying identity...");
 
       // STEP 4: Verify WebAuthn
@@ -58,7 +61,11 @@ function ScanPage() {
         }
       );
 
+      console.log(verifyRes)
+
       const student = verifyRes.data;
+
+      console.log(student)
 
       setStatus("Marking attendance...");
 
