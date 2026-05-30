@@ -42,6 +42,8 @@ function StudentWebAuthnRegister() {
         }
       );
 
+      console.log(verfyRes)
+
       setStatus(verifyRes.data.message);
 
     } catch (err) {
