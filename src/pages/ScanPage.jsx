@@ -42,7 +42,7 @@ function ScanPage() {
 
       // STEP 2: Get WebAuthn options
       const optionsRes = await API.post(
-        "/webauthn/auth/options",
+        "/webauthnAuth/auth/options",
         { rollNumber }
       );
 
