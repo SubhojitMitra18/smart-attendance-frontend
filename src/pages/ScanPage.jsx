@@ -1,92 +1,80 @@
 import { useState } from "react";
 import API from "../services/api";
-import { startAuthentication } from "@simplewebauthn/browser";
 
 function ScanPage() {
-  const [rollNumber, setRollNumber] = useState("");
+  const [formData, setFormData] = useState({
+    rollNumber: "",
+    department: "",
+    year: "",
+  });
+
   const [status, setStatus] = useState("");
   const [loading, setLoading] = useState(false);
 
   const getLocation = () => {
     return new Promise((resolve, reject) => {
       navigator.geolocation.getCurrentPosition(
-        (pos) => {
+        (position) => {
           resolve({
-            latitude: pos.coords.latitude,
-            longitude: pos.coords.longitude,
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
           });
         },
-        (err) => reject(err),
-        { enableHighAccuracy: true }
+        (error) => {
+          reject(error);
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+        }
       );
+    });
+  };
+
+  const handleChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.name]:
+        e.target.name === "year"
+          ? Number(e.target.value)
+          : e.target.value,
     });
   };
 
   const handleAttendance = async () => {
     try {
       setLoading(true);
+
       setStatus("Getting location...");
 
-      // STEP 1: GPS
       const location = await getLocation();
 
-      setStatus("Fetching authentication options...");
+      setStatus("Verifying session...");
 
-      // STEP 2: Get WebAuthn options
-      const optionsRes = await API.post(
-        "/webauthn/auth/options",
-        { rollNumber }
-      );
-
-      setStatus("Please scan fingerprint / Face ID...");
-
-      // STEP 3: Fingerprint authentication
-      const credential = await startAuthentication({
-        optionsJSON: optionsRes.data,
-      });
-
-
-      console.log("Credentials: ",credential)
-
-      setStatus("Verifying identity...");
-
-      // STEP 4: Verify WebAuthn
-      const verifyRes = await API.post(
-        "/webauthn/auth/verify",
-        {
-          rollNumber,
-          credential: JSON.parse(JSON.stringify(credential)),
-          latitude: location.latitude,
-          longitude: location.longitude,
-        }
-      );
-
-      console.log("Response: ",verifyRes)
-
-      const student = verifyRes.data;
-
-      console.log(student)
-
-      setStatus("Marking attendance...");
-
-      // STEP 5: Mark attendance
-      const attendanceRes = await API.post(
+      const res = await API.post(
         "/attendance/mark",
         {
-          studentId: student.studentId,
+          rollNumber: formData.rollNumber,
+          department: formData.department,
+          year: formData.year,
           latitude: location.latitude,
           longitude: location.longitude,
         }
       );
 
-      setStatus(attendanceRes.data.message);
+      setStatus(res.data.message);
 
-    } catch (err) {
-      console.log("ATTENDANCE ERROR:", err);
+      setFormData({
+        rollNumber: "",
+        department: "",
+        year: "",
+      });
+
+    } catch (error) {
+      console.error(error);
 
       setStatus(
-        err.response?.data?.message ||
-        err.message ||
+        error.response?.data?.message ||
         "Attendance failed"
       );
     } finally {
@@ -95,32 +83,57 @@ function ScanPage() {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 gap-4">
+    <div className="min-h-screen bg-gray-100 flex justify-center items-center p-5">
+      <div className="bg-white p-8 rounded-xl shadow-lg w-full max-w-md">
 
-      <h1 className="text-2xl font-bold">
-        Smart Attendance Scanner
-      </h1>
+        <h1 className="text-3xl font-bold text-center mb-6">
+          Smart Attendance
+        </h1>
 
-      <input
-        type="text"
-        placeholder="Enter Roll Number"
-        value={rollNumber}
-        onChange={(e) => setRollNumber(e.target.value)}
-        className="border p-2 rounded w-64"
-      />
+        <input
+          type="text"
+          name="rollNumber"
+          placeholder="Roll Number"
+          value={formData.rollNumber}
+          onChange={handleChange}
+          className="w-full border p-3 rounded mb-4"
+        />
 
-      <button
-        onClick={handleAttendance}
-        disabled={loading || !rollNumber}
-        className="bg-green-600 text-white px-6 py-2 rounded"
-      >
-        {loading ? "Processing..." : "Mark Attendance"}
-      </button>
+        <input
+          type="text"
+          name="department"
+          placeholder="Department"
+          value={formData.department}
+          onChange={handleChange}
+          className="w-full border p-3 rounded mb-4"
+        />
 
-      <p className="text-blue-600 text-center mt-4">
-        {status}
-      </p>
+        <input
+          type="number"
+          name="year"
+          placeholder="Year"
+          value={formData.year}
+          onChange={handleChange}
+          className="w-full border p-3 rounded mb-4"
+        />
 
+        <button
+          onClick={handleAttendance}
+          disabled={loading}
+          className="w-full bg-blue-600 text-white p-3 rounded-lg"
+        >
+          {loading
+            ? "Processing..."
+            : "Mark Attendance"}
+        </button>
+
+        {status && (
+          <div className="mt-5 p-3 bg-gray-100 rounded text-center">
+            {status}
+          </div>
+        )}
+
+      </div>
     </div>
   );
 }
