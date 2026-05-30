@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const API = axios.create({
-  baseURL: "https://smart-attendance-backend-st3f.onrender.com/api",
+  baseURL: "https://localhost:5000/api",
 });
 
 export default API;
