@@ -20,7 +20,6 @@ import DashboardHome from "./pages/DashboardHome";
 import StudentsPage from "./pages/StudentsPage";
 import SessionPage from "./pages/SessionPage";
 import ReportsPage from "./pages/ReportsPage";
-import StudentWebAuthnRegister from "./pages/WebauthnRegister";
 
 function App() {
   return (
@@ -32,10 +31,6 @@ function App() {
         <Route
           path="/"
           element={<ScanPage />}
-        />
-        <Route
-          path="/register"
-          element={<StudentWebAuthnRegister/>}
         />
 
         <Route
